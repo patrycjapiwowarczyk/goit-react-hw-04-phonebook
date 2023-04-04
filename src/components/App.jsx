@@ -1,34 +1,33 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import { nanoid } from 'nanoid';
 import ContactForm from './ContactForm/ContactForm';
 import ContactList from './ContactList/ContactList';
 import ContactFilter from './ContactFilter/ContactFilter';
 import css from './App.module.css';
+import { useEffect } from 'react';
 
-class App extends Component {
-  state = {
-    filter: '',
-    contacts: [],
-  };
+const App = () => {
+  const [filter, setFilter] = useState('');
+  const [contacts, setContacts] = useState([]);
 
-  componentDidMount() {
+  useEffect(() => {
     const localContacts = localStorage.getItem('contacts');
     if (localContacts) {
-      this.setState({ contacts: JSON.parse(localContacts) });
+      setContacts(JSON.parse(localContacts));
     } else {
-      this.setState({
-        contacts: [
-          { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-          { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-          { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-          { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-        ],
-      });
+      const defaultContacts = [
+        { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+        { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+        { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+        { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+      ];
+      setContacts(defaultContacts);
+      localStorage.setItem('contacts', JSON.stringify(defaultContacts));
     }
-  }
+  }, []);
 
-  addingContact = (name, number) => {
-    const contactAlreadyAdded = this.state.contacts.some(
+  const addingContact = (name, number) => {
+    const contactAlreadyAdded = contacts.some(
       contact => contact.name.toLowerCase() === name.toLowerCase()
     );
 
@@ -39,52 +38,38 @@ class App extends Component {
 
     const id = nanoid();
     const contact = { id, name, number };
-    this.setState(prevState => ({
-      contacts: [...prevState.contacts, contact],
-    }));
+    setContacts([...contacts, contact]);
+    localStorage.setItem('contacts', JSON.stringify([...contacts, contact]));
   };
 
-  deletingContact = contactId => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== contactId),
-    }));
+  const deletingContact = contactId => {
+    setContacts(contacts.filter(contact => contact.id !== contactId));
+    localStorage.setItem(contacts.filter(contact => contact.id !== contactId));
   };
 
-  handleFilterChange = e => {
-    const { value } = e.target;
-    this.setState({ filter: value });
+  const handleFilterChange = event => {
+    const { value } = event.target;
+    setFilter(value);
   };
 
-  gettingFilteredContacts = () => {
-    const { contacts, filter } = this.state;
+  const gettingFilteredContacts = () => {
     return contacts.filter(contact =>
       contact.name.toLowerCase().includes(filter.toLowerCase())
     );
   };
 
-  componentDidUpdate(prevState) {
-    if (this.state.contacts !== prevState.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-    }
-  }
+  const filteredContacts = gettingFilteredContacts();
 
-  render() {
-    const { filter } = this.state;
-    const filteredContacts = this.gettingFilteredContacts();
-    return (
-      <div className={css['container']}>
-        <h1>Phonebook</h1>
-        <ContactForm onSubmit={this.addingContact} />
+  return (
+    <div className={css['container']}>
+      <h1>Phonebook</h1>
+      <ContactForm onSubmit={addingContact} />
 
-        <h2>Contacts</h2>
-        <ContactFilter value={filter} onChange={this.handleFilterChange} />
-        <ContactList
-          contacts={filteredContacts}
-          onDelete={this.deletingContact}
-        />
-      </div>
-    );
-  }
-}
+      <h2>Contacts</h2>
+      <ContactFilter value={filter} onChange={handleFilterChange} />
+      <ContactList contacts={filteredContacts} onDelete={deletingContact} />
+    </div>
+  );
+};
 
 export default App;
